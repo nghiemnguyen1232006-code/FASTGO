@@ -1,0 +1,8 @@
+:root {
+    --role-color:   #DC2626;
+    --role-dark:    #991B1B;
+    --role-mid:     #B91C1C;
+    --role-light:   #FEF2F2;
+    --role-border:  #FECACA;
+    --role-glow:    rgba(220,38,38,.16);
+}
