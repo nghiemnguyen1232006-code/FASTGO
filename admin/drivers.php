@@ -46,11 +46,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $msg_type = 'error';
 
 } else {
- $chk = $conn->prepare("SELECT id FROM users WHERE email=?");
- $chk->execute([$email]);
- if ($chk->fetch()) {
- $msg = "Email đã tồn tại trong hệ thống."; $msg_type = 'error';
- } else {
+ $chk = $conn->prepare("
+    SELECT id
+    FROM users
+    WHERE email = ?
+       OR cccd = ?
+       OR vehicle_plate = ?
+");
+$chk->execute([$email, $cccd, $vehicle_plate]);
+$user = $chk->fetch(PDO::FETCH_ASSOC);
+
+if ($user) {
+
+    // kiểm tra riêng từng trường
+    $chk = $conn->prepare("
+        SELECT
+            SUM(email = ?) AS email_exist,
+            SUM(cccd = ?) AS cccd_exist,
+            SUM(vehicle_plate = ?) AS plate_exist
+        FROM users
+    ");
+    $chk->execute([$email, $cccd, $vehicle_plate]);
+    $exist = $chk->fetch(PDO::FETCH_ASSOC);
+
+    if ($exist['email_exist']) {
+        $msg = "Email đã tồn tại trong hệ thống.";
+    } elseif ($exist['cccd_exist']) {
+        $msg = "Số CCCD đã tồn tại trong hệ thống.";
+    } elseif ($exist['plate_exist']) {
+        $msg = "Biển số xe đã tồn tại trong hệ thống.";
+    }
+
+    $msg_type = "error";
+
+} else {
  $hash = password_hash($password, PASSWORD_DEFAULT);
  $stmt = $conn->prepare("INSERT INTO users (fullname,email,phone,password,role,status,vehicle_plate,license_type,cccd) VALUES (?,?,?,?,'driver','active',?,?,?)");
  $stmt->execute([$fullname, $email, $phone, $hash, $vehicle_plate, $license_type, $cccd]);
@@ -74,12 +103,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $msg = "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.";
     $msg_type = 'error';
 
+}elseif (!preg_match('/^\d{12}$/', $cccd)) {
+    $msg = "CCCD phải gồm đúng 12 chữ số.";
+    $msg_type = 'error';
+}elseif (!preg_match('/^[0-9]{2}[A-Z][0-9]?-[0-9]{4,5}$/', strtoupper($vehicle_plate))) {
+    $msg = "Biển số xe không đúng định dạng.";
+}else {
+ $chk = $conn->prepare("
+SELECT
+    SUM(email = ?) AS email_exist,
+    SUM(cccd = ?) AS cccd_exist,
+    SUM(vehicle_plate = ?) AS plate_exist
+FROM users
+WHERE id != ?
+");
+
+$chk->execute([
+    $email,
+    $cccd,
+    $vehicle_plate,
+    $uid
+]);
+
+$exist = $chk->fetch(PDO::FETCH_ASSOC);
+
+if ($exist['email_exist']) {
+
+    $msg = "Email đã được dùng bởi tài khoản khác.";
+    $msg_type = "error";
+
+} elseif ($exist['cccd_exist']) {
+
+    $msg = "Số CCCD đã được dùng bởi tài khoản khác.";
+    $msg_type = "error";
+
+} elseif ($exist['plate_exist']) {
+
+    $msg = "Biển số xe đã được dùng bởi tài khoản khác.";
+    $msg_type = "error";
+
 } else {
- $chk = $conn->prepare("SELECT id FROM users WHERE email=? AND id!=?");
- $chk->execute([$email, $uid]);
- if ($chk->fetch()) {
- $msg = "Email đã được dùng bởi tài khoản khác."; $msg_type = 'error';
- } else {
  if ($password !== '') {
  $hash = password_hash($password, PASSWORD_DEFAULT);
  $stmt = $conn->prepare("UPDATE users SET fullname=?,email=?,phone=?,password=?,vehicle_plate=?,license_type=?,cccd=? WHERE id=? AND role='driver'");
