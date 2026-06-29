@@ -10,6 +10,18 @@ $msg = '';
 $msg_type = '';
 $edit_user = null;
 
+function validatePhone($phone)
+{
+    return preg_match('/^0\d{9}$/', $phone);
+}
+
+function validatePassword($password)
+{
+    // Ít nhất 8 ký tự
+    // Có chữ thường, chữ hoa, số và ký tự đặc biệt
+    return preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/', $password);
+}
+
 /* ─── XỬ LÝ ACTION ─────────────────────────────────────────── */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  $action = $_POST['action'] ?? '';
@@ -24,6 +36,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  $license_type = trim($_POST['license_type']);
  $cccd = trim($_POST['cccd']);
 
+ if (!validatePhone($phone)) {
+    $msg = "Số điện thoại phải gồm đúng 10 số và bắt đầu bằng số 0.";
+    $msg_type = 'error';
+
+} elseif (!validatePassword($password)) {
+    $msg = "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.";
+
+    $msg_type = 'error';
+
+} else {
  $chk = $conn->prepare("SELECT id FROM users WHERE email=?");
  $chk->execute([$email]);
  if ($chk->fetch()) {
@@ -32,9 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  $hash = password_hash($password, PASSWORD_DEFAULT);
  $stmt = $conn->prepare("INSERT INTO users (fullname,email,phone,password,role,status,vehicle_plate,license_type,cccd) VALUES (?,?,?,?,'driver','active',?,?,?)");
  $stmt->execute([$fullname, $email, $phone, $hash, $vehicle_plate, $license_type, $cccd]);
- $msg = "Đã thêm tài xế <strong>$fullname</strong>thành công."; $msg_type = 'success';
+ $msg = "Đã thêm tài xế <strong>$fullname</strong> thành công."; $msg_type = 'success';
  }
-
+}
  } elseif ($action === 'edit') {
  $fullname = trim($_POST['fullname']);
  $email = trim($_POST['email']);
@@ -44,6 +66,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  $license_type = trim($_POST['license_type']);
  $cccd = trim($_POST['cccd']);
 
+ if (!validatePhone($phone)) {
+    $msg = "Số điện thoại phải gồm đúng 10 số và bắt đầu bằng số 0.";
+    $msg_type = 'error';
+
+} elseif ($password !== '' && !validatePassword($password)) {
+    $msg = "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.";
+    $msg_type = 'error';
+
+} else {
  $chk = $conn->prepare("SELECT id FROM users WHERE email=? AND id!=?");
  $chk->execute([$email, $uid]);
  if ($chk->fetch()) {
@@ -59,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  }
  $msg = "Đã cập nhật thông tin tài xế."; $msg_type = 'success';
  }
-
+}
  } elseif ($action === 'lock') {
  $conn->prepare("UPDATE users SET status='locked' WHERE id=? AND role='driver'")->execute([$uid]);
  $msg = "Đã khóa tài khoản tài xế."; $msg_type = 'warning';
@@ -165,12 +196,25 @@ include "../includes/header-admin.php";
  </div>
  <div class="form-group">
  <label>Số điện thoại</label>
- <input type="text" name="phone" placeholder="0901000000"
+ <input
+    type="text"
+    name="phone"
+    required
+    maxlength="10"
+    pattern="0[0-9]{9}"
+    title="Số điện thoại phải gồm 10 số và bắt đầu bằng số 0" placeholder="0901000000"
  value="<?= htmlspecialchars($edit_user['phone'] ?? '') ?>">
  </div>
  <div class="form-group">
  <label><?= $edit_user ? 'Mật khẩu mới (bỏ trống = giữ nguyên)' : 'Mật khẩu *' ?></label>
- <input type="password" name="password" <?= $edit_user ? '' : 'required' ?>placeholder="<?= $edit_user ? 'Để trống nếu không đổi' : 'Nhập mật khẩu' ?>">
+ <input
+    type="password"
+    name="password"
+    <?= $edit_user ? '' : 'required' ?>
+    minlength="8"
+    pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z\d]).{8,}"
+    title="Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+    placeholder="<?= $edit_user ? 'Để trống nếu không đổi' : 'Nhập mật khẩu' ?>">
  </div>
  </div>
 

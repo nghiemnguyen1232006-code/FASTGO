@@ -1,0 +1,22 @@
+# thư viện PHP (composer)
+vendor/
+
+# config nhạy cảm
+.env
+config.php
+db.php
+
+# log hệ thống
+*.log
+
+# cache
+cache/
+tmp/
+
+# IDE
+.vscode/
+.idea/
+
+# hệ điều hành
+.DS_Store
+Thumbs.db
