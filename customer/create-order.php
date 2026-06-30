@@ -47,10 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $note             = trim($_POST['note'] ?? '');
     $payment_method   = $_POST['payment_method'] ?? 'cod';
     // Tính phí ship theo công thức
-    $base_fee   = 15000;
-    $per_km     = 5000;
+    $base_fee   = 5000;
+    $per_km     = 200;
     $weight_fee = 0;
-    if ($weight > 3) $weight_fee = ($weight - 3) * 3000;
+    if ($weight > 3) $weight_fee = ($weight - 3) * 1000;
     $type_fee = ['document'=>0,'small'=>5000,'medium'=>10000,'large'=>20000,'fragile'=>15000][$package_type] ?? 0;
     $price = $base_fee + ($per_km * $distance_km) + $weight_fee + $type_fee;
     $price = ceil($price / 1000) * 1000; // làm tròn lên 1000đ
