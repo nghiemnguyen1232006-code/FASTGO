@@ -21,6 +21,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  $phone = trim($_POST['phone']);
  $password = $_POST['password'];
 
+ if (!validatePhone($phone)) {
+    $msg = "Số điện thoại phải gồm đúng 10 số và bắt đầu bằng số 0.";
+    $msg_type = 'error';
+
+} elseif (!validatePassword($password)) {
+    $msg = "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.";
+
+    $msg_type = 'error';
+
+}else{
  // Kiểm tra email trùng
  $chk = $conn->prepare("SELECT id FROM users WHERE email=?");
  $chk->execute([$email]);
@@ -34,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  $msg = "Đã thêm nhân viên <strong>$fullname</strong>thành công.";
  $msg_type = 'success';
  }
-
+}
  } elseif ($action === 'edit') {
  $fullname = trim($_POST['fullname']);
  $email = trim($_POST['email']);
