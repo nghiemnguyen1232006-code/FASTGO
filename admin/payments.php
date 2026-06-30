@@ -4,7 +4,7 @@ require "../includes/role.php";
 require "../includes/db.php";
 
 checkRole('admin');
-
+include "../includes/header-admin.php";
 $stmt = $conn->query("
 SELECT
 p.*,
@@ -156,3 +156,4 @@ else {
 </table>
 
 </div>
+<?php include "../includes/footer.php"; ?>
